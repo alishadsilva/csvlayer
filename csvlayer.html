@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>CSVLayer - Project points on the fly - 4.15</title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.15/esri/themes/dark-red/main.css"
+    />
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: black;
+      }
+    </style>
+
+    <script src="https://js.arcgis.com/4.15/"></script>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/layers/CSVLayer",
+        "esri/tasks/support/Query",
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/tasks/GeometryService",
+        "esri/Graphic",
+        "esri/layers/GraphicsLayer",
+        "esri/geometry/Polygon",
+        "esri/symbols/SimpleFillSymbol",
+        "esri/geometry/geometryEngine",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand"
+      ], function(WebMap, CSVLayer, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, Polygon, SimpleFillSymbol, geometryEngine, Legend, Expand) {
+        var geomservice= new GeometryService({
+          url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
+        })
+        var map1= new Map({
+          basemap: 'streets'
+        });
+
+        var url =
+          "https://alishadsilva.github.io/csvlayer/Metadata_spec.csv";
+
+        var csvLayer = new CSVLayer({
+          url:url
+        });
+
+        map1.add(csvLayer)
+        csvLayer.load().then(function(){
+        var query = new Query({
+          where: "Feeder= 'Newton'",
+          returnGeometry: true
+        });
+        
+        return csvLayer.queryFeatures(query);
+        })
+        .then(function(results){
+          console.log(results.features);
+          var  geom= results.features.map(function(item){
+            return item.geometry
+          })
+
+          geomservice.convexHull(geom).then(function(result1){
+            var simpleFillSymbol = {
+          type: "simple-fill",
+          color: [227, 139, 79, 0.5],  // orange, opacity 50%
+          outline: {
+            color: [255, 255, 255],
+            width: 1
+          }
+        };
+
+        var polygonGraphic = new Graphic({
+          geometry: result1,
+          symbol: simpleFillSymbol
+        });
+        var graphicsLayer = new GraphicsLayer();
+        
+        graphicsLayer.add(polygonGraphic);
+        map1.add(graphicsLayer);
+          })
+          
+        //   var polygon = {
+        //   type: "polygon",
+        //   rings: geo
+        // };
+        
+        })
+
+        var view = new MapView({
+          map: map1,  // References a Map instance
+          container: "viewDiv"  // References the ID of a DOM element
+        });
+        view.center = [-59.53, 13];  // Sets the center point of the view at a specified lon/lat
+        view.zoom = 10;  // Sets the zoom LOD to 13
+
+      })
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
