@@ -51,7 +51,7 @@
         });
 
         var url =
-          "https://alishadsilva.github.io/csvlayer/Metadata_spec.csv";
+          "https://alishadsilva.github.io/csvlayer/Metadata_spec_v2.csv";
 
         var csvLayer = new CSVLayer({
           url:url
@@ -60,7 +60,7 @@
         map1.add(csvLayer)
         csvLayer.load().then(function(){
         var query = new Query({
-          where: "Feeder= 'Newton'",
+          where: "Outage_Number= 1",
           returnGeometry: true
         });
         
