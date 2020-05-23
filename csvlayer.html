@@ -50,6 +50,13 @@
           basemap: 'streets'
         });
 
+        var view = new MapView({
+          map: map1,  // References a Map instance
+          container: "viewDiv"  // References the ID of a DOM element
+        });
+        view.center = [-59.53, 13];  // Sets the center point of the view at a specified lon/lat
+        view.zoom = 10;  // Sets the zoom LOD to 13
+
         var url =
           "https://alishadsilva.github.io/csvlayer/Metadata_spec_v2.csv";
 
@@ -99,18 +106,14 @@
         
         graphicsLayer.add(polygonGraphic);
         map1.add(graphicsLayer);
+        if (outage_num.length==1){
+              view.extent=graphicsLayer.fullExtent
+            }
           })
         })
           }
         })
       })
-        var view = new MapView({
-          map: map1,  // References a Map instance
-          container: "viewDiv"  // References the ID of a DOM element
-        });
-        view.center = [-59.53, 13];  // Sets the center point of the view at a specified lon/lat
-        view.zoom = 10;  // Sets the zoom LOD to 13
-
       })
     </script>
   </head>
