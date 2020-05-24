@@ -59,7 +59,7 @@
         view.zoom = 11;  // Sets the zoom LOD to 10
 
         const url =
-          "https://alishadsilva.github.io/csvlayer/Metadata_spec_v3.csv";
+          "https://alishadsilva.github.io/csvlayer/Metadata_clean_v4.csv";
         
           const marker = {
             type: "simple",
@@ -120,7 +120,7 @@
         graphicsLayer.add(polygonGraphic);
         map1.add(graphicsLayer);
         if (outage_num.length==1){
-              view.extent=graphicsLayer.fullExtent
+              view.extent=graphicsLayer.graphics.items[0].geometry.extent
             }
           })
         })
