@@ -6,7 +6,7 @@
       name="viewport"
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
     />
-    <title>CSVLayer - Project points on the fly - 4.15</title>
+    <title>CSVLayer</title>
 
     <link
       rel="stylesheet"
@@ -38,16 +38,14 @@
         "esri/tasks/GeometryService",
         "esri/Graphic",
         "esri/layers/GraphicsLayer",
-        "esri/geometry/Polygon",
         "esri/symbols/SimpleFillSymbol",
-        "esri/geometry/geometryEngine",
         "esri/widgets/Legend",
         "esri/widgets/Expand"
-      ], function(WebMap, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, Polygon, SimpleFillSymbol, geometryEngine, Legend, Expand) {
+      ], function(WebMap, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Legend, Expand) {
         var geomservice= new GeometryService({
           url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
         })
-        var map1= new Map({
+        map1= new Map({
           basemap: 'streets'
         });
 
@@ -59,7 +57,7 @@
         view.zoom = 11;  // Sets the zoom LOD to 10
 
         const url =
-          "https://alishadsilva.github.io/csvlayer/metadataclean.csv";
+          "https://alishadsilva.github.io/csvlayer/newton.csv";
         
           const marker = {
             type: "simple",
@@ -120,7 +118,8 @@
         graphicsLayer.add(polygonGraphic);
         map1.add(graphicsLayer);
         if (outage_num.length==1){
-              view.extent=graphicsLayer.graphics.items[0].geometry.extent
+              view.extent=polygonGraphic.geometry.extent
+              view.zoom= view.zoom - 1
             }
           })
         })
