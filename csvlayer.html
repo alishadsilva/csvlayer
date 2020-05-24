@@ -29,7 +29,6 @@
 
     <script>
       require([
-        "esri/WebMap",
         "esri/layers/CSVLayer",
         "esri/symbols/SimpleMarkerSymbol",
         "esri/tasks/support/Query",
@@ -41,11 +40,12 @@
         "esri/symbols/SimpleFillSymbol",
         "esri/widgets/Legend",
         "esri/widgets/Expand"
-      ], function(WebMap, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Legend, Expand) {
+      ], function(CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Legend, Expand) {
         var geomservice= new GeometryService({
           url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
         })
-        map1= new Map({
+
+        var map1= new Map({
           basemap: 'streets'
         });
 
