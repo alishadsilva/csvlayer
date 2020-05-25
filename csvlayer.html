@@ -29,6 +29,7 @@
 
     <script>
       require([
+      "esri/layers/FeatureLayer",
         "esri/layers/CSVLayer",
         "esri/symbols/SimpleMarkerSymbol",
         "esri/tasks/support/Query",
@@ -40,7 +41,7 @@
         "esri/symbols/SimpleFillSymbol",
         "esri/widgets/Legend",
         "esri/widgets/Expand"
-      ], function(CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Legend, Expand) {
+      ], function(FeatureLayer, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Legend, Expand) {
         var geomservice= new GeometryService({
           url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
         })
@@ -56,8 +57,12 @@
         view.center = [-59.558614, 13.172762];  // Sets the center point of the view at a specified lon/lat 
         view.zoom = 11;  // Sets the zoom LOD to 10
 
+        var boundary= new FeatureLayer({
+          url:"https://services2.arcgis.com/j80Jz20at6Bi0thr/arcgis/rest/services/barbados_boundary/FeatureServer/0"
+        })
+
         const url =
-          "https://alishadsilva.github.io/csvlayer/metadataclean.csv"; // url pointing to the csv.
+          "https://alishadsilva.github.io/csvlayer/Metadata_spec_v2.csv"; // url pointing to the csv.
         
           const marker = {
             type: "simple",
@@ -75,11 +80,57 @@
           renderer: marker
         });
 
-        map1.add(csvLayer)
-        
+        var test=new GraphicsLayer()
 
-        csvLayer.load().then(function(){
-          csvLayer.queryFeatures().then(function(event){
+        // map1.add(csvLayer)
+        
+        // test.load().then(function(){
+          boundary.queryFeatures().then(function(evt){
+          var query1= new Query({
+          geometry: evt.features[0].geometry,
+          spatialRelationship: "contains",
+          returnGeometry: true
+        })
+
+        csvLayer.queryFeatures(query1).then(function(points){  
+          points.features.forEach(function(evt1){
+            var pointsgraphic= new Graphic({
+            geometry: evt1.geometry,
+            attributes: evt1.attributes,
+            symbol:{
+            type:"simple-marker",
+            style: "x",
+            size: 5,
+            outline: { color: [251, 9, 9, 1] },
+            color: [253, 203, 203, 0.25]
+          }
+          })
+          test.add(pointsgraphic)
+          })
+          map1.add(test)
+          var featurelayer= new FeatureLayer({
+          source: test.graphics,
+          objectIdField: "OBJECTID",
+          fields: [{
+            name: "OBJECTID",
+            alias: "OBJECTID",
+            type: "oid"
+          }, {
+            name: "Badge",
+            alias: "Badge",
+            type: "string"
+          },{
+            name:"Feeder",
+            alias: "Feeder",
+            type: "string"
+          },{
+            name: "Outage_Number",
+            alias: "Outage_Number",
+            type: "long"
+          }
+          ],
+        })
+        featurelayer.queryFeatures().then(function(event){
           
           outage_num=[]
           for (var i = 0; i < event.features.length; i++) {
@@ -94,7 +145,7 @@
             returnGeometry: true
           });
         
-        csvLayer.queryFeatures(query2).then(function(results){
+        featurelayer.queryFeatures(query2).then(function(results){
           console.log(results.features);
           var  geom= results.features.map(function(item){
             return item.geometry
@@ -125,8 +176,9 @@
         })
           }
         })
+        })
       })
-      })
+    })
     </script>
   </head>
 
