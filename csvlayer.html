@@ -82,16 +82,26 @@
 
         var test=new GraphicsLayer()
 
-        // map1.add(csvLayer)
+        outage_num=[]
+        csvLayer.load().then(function(){
+        csvLayer.queryFeatures().then(function(event){
+          for (var i = 0; i < event.features.length; i++) {
+            if(!outage_num.includes(event.features[i].attributes.Outage_Number)){
+              outage_num.push(event.features[i].attributes.Outage_Number)
+            }
+          }
+        })
         
         // test.load().then(function(){
-          boundary.queryFeatures().then(function(evt){
+        boundary.queryFeatures().then(function(evt){
+          for (x of outage_num){
           var query1= new Query({
-          geometry: evt.features[0].geometry,
-          spatialRelationship: "contains",
-          returnGeometry: true
-        })
-
+            where: "Outage_Number=" + x ,
+            geometry: evt.features[0].geometry,
+            spatialRelationship: "contains",
+            returnGeometry: true
+          })
+        
         csvLayer.queryFeatures(query1).then(function(points){  
           points.features.forEach(function(evt1){
             var pointsgraphic= new Graphic({
@@ -108,46 +118,7 @@
           test.add(pointsgraphic)
           })
           map1.add(test)
-          var featurelayer= new FeatureLayer({
-          source: test.graphics,
-          objectIdField: "OBJECTID",
-          fields: [{
-            name: "OBJECTID",
-            alias: "OBJECTID",
-            type: "oid"
-          }, {
-            name: "Badge",
-            alias: "Badge",
-            type: "string"
-          },{
-            name:"Feeder",
-            alias: "Feeder",
-            type: "string"
-          },{
-            name: "Outage_Number",
-            alias: "Outage_Number",
-            type: "long"
-          }
-          ],
-        })
-        featurelayer.queryFeatures().then(function(event){
-          
-          outage_num=[]
-          for (var i = 0; i < event.features.length; i++) {
-            if(!outage_num.includes(event.features[i].attributes.Outage_Number)){
-              outage_num.push(event.features[i].attributes.Outage_Number)
-            }
-          }
-          console.log(outage_num)
-          for (x of outage_num) {
-            var query2 = new Query({
-            where: "Outage_Number=" + x ,
-            returnGeometry: true
-          });
-        
-        featurelayer.queryFeatures(query2).then(function(results){
-          console.log(results.features);
-          var  geom= results.features.map(function(item){
+          var  geom= points.features.map(function(item){
             return item.geometry
           })
           geomservice.convexHull(geom).then(function(result1){
@@ -173,12 +144,12 @@
               view.zoom= view.zoom - 1
             }
           })
-        })
+          })
           }
-        })
+          })
         })
       })
-    })
+    // })
     </script>
   </head>
 
