@@ -29,7 +29,8 @@
 
     <script>
       require([
-      "esri/layers/FeatureLayer",
+      "esri/geometry/geometryEngine",
+        "esri/layers/FeatureLayer",
         "esri/layers/CSVLayer",
         "esri/symbols/SimpleMarkerSymbol",
         "esri/tasks/support/Query",
@@ -39,13 +40,14 @@
         "esri/Graphic",
         "esri/layers/GraphicsLayer",
         "esri/symbols/SimpleFillSymbol",
+        "esri/tasks/support/FeatureSet",
         "esri/widgets/Legend",
         "esri/widgets/Expand"
-      ], function(FeatureLayer, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Legend, Expand) {
+      ], function(geometryEngine, FeatureLayer, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, FeatureSet, Legend, Expand) {
         var geomservice= new GeometryService({
           url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
         })
-
+        
         var map1= new Map({
           basemap: 'streets'
         });
@@ -62,94 +64,94 @@
         })
 
         const url =
-          "https://alishadsilva.github.io/csvlayer/Metadata_spec_v2.csv"; // url pointing to the csv.
+          "https://alishadsilva.github.io/csvlayer/Metadata_spec_v2.csv"; 
         
-          const marker = {
-            type: "simple",
-            symbol: {
-            type:"simple-marker",
-            style: "x",
-            size: 5,
-            outline: { color: [251, 9, 9, 1] },
-            color: [253, 203, 203, 0.25]
-          }
-        }
-
         var csvLayer = new CSVLayer({
-          url:url,
-          renderer: marker
+          url:url
         });
 
         var test=new GraphicsLayer()
+        var graphicsLayer = new GraphicsLayer();
 
         outage_num=[]
-        csvLayer.load().then(function(){
-        csvLayer.queryFeatures().then(function(event){
-          for (var i = 0; i < event.features.length; i++) {
-            if(!outage_num.includes(event.features[i].attributes.Outage_Number)){
-              outage_num.push(event.features[i].attributes.Outage_Number)
-            }
-          }
-        })
-        
-        // test.load().then(function(){
-        boundary.queryFeatures().then(function(evt){
-          for (x of outage_num){
-          var query1= new Query({
-            where: "Outage_Number=" + x ,
-            geometry: evt.features[0].geometry,
-            spatialRelationship: "contains",
-            returnGeometry: true
-          })
-        
-        csvLayer.queryFeatures(query1).then(function(points){  
-          points.features.forEach(function(evt1){
-            var pointsgraphic= new Graphic({
-            geometry: evt1.geometry,
-            attributes: evt1.attributes,
-            symbol:{
-            type:"simple-marker",
-            style: "x",
-            size: 5,
-            outline: { color: [251, 9, 9, 1] },
-            color: [253, 203, 203, 0.25]
-          }
-          })
-          test.add(pointsgraphic)
-          })
-          map1.add(test)
-          var  geom= points.features.map(function(item){
-            return item.geometry
-          })
-          geomservice.convexHull(geom).then(function(result1){
-            var simpleFillSymbol = {
-          type: "simple-fill",
-          color: [227, 139, 79, 0.1],  // orange, opacity 10%
-          outline: {
-            color: [145, 29, 0],
-            width: 1
-          }
-        };
 
-        var polygonGraphic = new Graphic({
-          geometry: result1,
-          symbol: simpleFillSymbol
-        });
-        var graphicsLayer = new GraphicsLayer();
-        
-        graphicsLayer.add(polygonGraphic);
-        map1.add(graphicsLayer);
-        if (outage_num.length==1){
-              view.extent=polygonGraphic.geometry.extent
-              view.zoom= view.zoom - 1
+        // csvLayer.load().then(function(){
+          boundary.queryFeatures().then(function(evt){
+            var boundarygeom= evt.features[0].geometry
+          console.log(boundarygeom)
+          
+
+          csvLayer.queryFeatures().then(function(event){
+            for (var i = 0; i < event.features.length; i++) {
+              if(!outage_num.includes(event.features[i].attributes.Outage_Number)){
+                outage_num.push(event.features[i].attributes.Outage_Number)
+              }
             }
-          })
-          })
-          }
-          })
+            console.log(outage_num)
+            outage_num.forEach(function(evt){
+              console.log(evt)
+              var query1= new Query({
+                where: "Outage_Number=" + evt,
+                returnGeometry: true
+                })
+                return csvLayer.queryFeatures(query1).then(function(points){ 
+                  console.log(points)
+                  var geom=[]
+                  for (y of points.features){
+                    if (geometryEngine.contains(boundarygeom,y.geometry)){
+                      geom.push(y.geometry)
+                      var pointsgraphic= new Graphic({
+                      geometry: y.geometry,
+                      attributes: y.attributes,
+                      symbol:{
+                      type:"simple-marker",
+                      style: "x",
+                      size: 5,
+                      outline: { color: [251, 9, 9, 1] },
+                      color: [253, 203, 203, 0.25]
+                    }
+                    })
+                    test.add(pointsgraphic)
+                    }
+                    }
+                    console.log(test)
+                    // var  geom= test.graphics.items.map(function(item){
+                    //   return item.geometry
+                    //   console.log(item.geometry)
+                    //   })
+                      geomservice.convexHull(geom).then(function(result1){
+                        var simpleFillSymbol = {
+                          type: "simple-fill",
+                          color: [227, 139, 79, 0.1],  // orange, opacity 10%
+                          outline: {
+                          color: [145, 29, 0],
+                          width: 1
+                          }
+                        };
+
+                    var polygonGraphic = new Graphic({
+                      geometry: result1,
+                      symbol: simpleFillSymbol
+                      });
+                    graphicsLayer.add(polygonGraphic)
+                    map1.add( graphicsLayer)
+                    geom=[]
+                    if (outage_num.length==1){
+                      view.extent=polygonGraphic.geometry.extent
+                      view.zoom= view.zoom - 1
+                    }
+                  })
+                }) // csvlayer qf1 end
+                }) //for loop end
+                // })//csv layer qf.then end
+            }) // csvlayer qf end
+            map1.add(test)
+            console.log(test)
+          }) //boundary qf end
+        // }) //load func end
+
         })
-      })
-    // })
+
     </script>
   </head>
 
