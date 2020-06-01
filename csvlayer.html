@@ -6,7 +6,7 @@
       name="viewport"
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
     />
-    <title>CSVLayer</title>
+    <title>CSVLayer with Pop Up Docked</title>
 
     <link
       rel="stylesheet"
@@ -23,14 +23,40 @@
         width: 100%;
         background-color: black;
       }
+      .feature-listcontrol {
+        position: absolute;
+        overflow: auto;
+        z-index: 10;
+        top: 76%;
+        left: 10%;
+        bottom: 5%;
+        width: 250px;
+        height: 20%;
+        padding: 10px;
+        box-sizing: border-box;
+        /* margin: -40px 0 0 -125px; */
+        margin-left: -9%;
+        background-color: black;
+        color: white;
+        text-align: left;
+        -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      label {
+          padding-left: 30%;
+          font-weight: bold;
+      }
+      tr:hover {
+          color: red;
+        }
+
     </style>
 
     <script src="https://js.arcgis.com/4.15/"></script>
 
     <script>
       require([
-      "esri/geometry/geometryEngine",
-        "esri/layers/FeatureLayer",
         "esri/layers/CSVLayer",
         "esri/symbols/SimpleMarkerSymbol",
         "esri/tasks/support/Query",
@@ -40,122 +66,142 @@
         "esri/Graphic",
         "esri/layers/GraphicsLayer",
         "esri/symbols/SimpleFillSymbol",
-        "esri/tasks/support/FeatureSet",
-        "esri/widgets/Legend",
         "esri/widgets/Expand"
-      ], function(geometryEngine, FeatureLayer, CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, FeatureSet, Legend, Expand) {
+      ], function(CSVLayer, SimpleMarkerSymbol, Query, Map, MapView, GeometryService, Graphic, GraphicsLayer, SimpleFillSymbol, Expand) {
+        var highlight=null;
+        var graphicsLayer = new GraphicsLayer();
+        const table = document.getElementById("myTable");
+        table.addEventListener("mouseout", mouseout)
+
         var geomservice= new GeometryService({
           url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
         })
-        
+
         var map1= new Map({
           basemap: 'streets'
         });
 
         var view = new MapView({
           map: map1,  // References a Map instance
-          container: "viewDiv"  // References the ID of a DOM element
+          container: "viewDiv",  // References the ID of a DOM element
+          center: [-59.558614, 13.172762],  // Sets the center point of the view at a specified lon/lat 
+          zoom:11 // Sets the zoom LOD to 11
         });
-        view.center = [-59.558614, 13.172762];  // Sets the center point of the view at a specified lon/lat 
-        view.zoom = 11;  // Sets the zoom LOD to 10
-
-        var boundary= new FeatureLayer({
-          url:"https://services2.arcgis.com/j80Jz20at6Bi0thr/arcgis/rest/services/barbados_boundary/FeatureServer/0"
-        })
 
         const url =
-          "https://alishadsilva.github.io/csvlayer/Metadata_spec_v2.csv"; 
+          "https://alishadsilva.github.io/csvlayer/metadataclean.csv"; // url pointing to the csv.
         
+          const marker = {
+            type: "simple",
+            symbol: {
+            type:"simple-marker",
+            style: "x",
+            size: 5,
+            outline: { color: [251, 9, 9, 1] },
+            color: [253, 203, 203, 0.25]
+          }
+        }
+
         var csvLayer = new CSVLayer({
-          url:url
+          url:url,
+          renderer: marker
         });
 
-        var test=new GraphicsLayer()
-        var graphicsLayer = new GraphicsLayer();
+        map1.addMany([csvLayer,graphicsLayer])
 
-        outage_num=[]
-
-        // csvLayer.load().then(function(){
-          boundary.queryFeatures().then(function(evt){
-            var boundarygeom= evt.features[0].geometry
-          console.log(boundarygeom)
+        view.when()
+        .then(function(){
+          return csvLayer.queryFeatures().then(function(event){
           
-
-          csvLayer.queryFeatures().then(function(event){
-            for (var i = 0; i < event.features.length; i++) {
-              if(!outage_num.includes(event.features[i].attributes.Outage_Number)){
-                outage_num.push(event.features[i].attributes.Outage_Number)
-              }
+          outage_num=[]
+          for (var i = 0; i < event.features.length; i++) {
+            if(!outage_num.includes(event.features[i].attributes.Outage_Number)){
+              outage_num.push(event.features[i].attributes.Outage_Number)
             }
-            console.log(outage_num)
-            outage_num.forEach(function(evt){
-              console.log(evt)
-              var query1= new Query({
-                where: "Outage_Number=" + evt,
-                returnGeometry: true
-                })
-                return csvLayer.queryFeatures(query1).then(function(points){ 
-                  console.log(points)
-                  var geom=[]
-                  for (y of points.features){
-                    if (geometryEngine.contains(boundarygeom,y.geometry)){
-                      geom.push(y.geometry)
-                      var pointsgraphic= new Graphic({
-                      geometry: y.geometry,
-                      attributes: y.attributes,
-                      symbol:{
-                      type:"simple-marker",
-                      style: "x",
-                      size: 5,
-                      outline: { color: [251, 9, 9, 1] },
-                      color: [253, 203, 203, 0.25]
-                    }
-                    })
-                    test.add(pointsgraphic)
-                    }
-                    }
-                    console.log(test)
-                    // var  geom= test.graphics.items.map(function(item){
-                    //   return item.geometry
-                    //   console.log(item.geometry)
-                    //   })
-                      geomservice.convexHull(geom).then(function(result1){
-                        var simpleFillSymbol = {
-                          type: "simple-fill",
-                          color: [227, 139, 79, 0.1],  // orange, opacity 10%
-                          outline: {
-                          color: [145, 29, 0],
-                          width: 1
-                          }
-                        };
+          }
+        //   console.log(outage_num)
+          for (x of outage_num) {
+            var query2 = new Query({
+            where: "Outage_Number=" + x ,
+            returnGeometry: true
+          });
+        
+         csvLayer.queryFeatures(query2).then(function(results){
+        //   console.log(results.features);
+          var  geom= results.features.map(function(item){
+            return item.geometry
+          })
+          var i= results.features[0].attributes.Outage_Number 
+          var att= results.features[0].attributes.Feeder
 
-                    var polygonGraphic = new Graphic({
-                      geometry: result1,
-                      symbol: simpleFillSymbol
-                      });
-                    graphicsLayer.add(polygonGraphic)
-                    map1.add( graphicsLayer)
-                    geom=[]
-                    if (outage_num.length==1){
-                      view.extent=polygonGraphic.geometry.extent
-                      view.zoom= view.zoom - 1
-                    }
-                  })
-                }) // csvlayer qf1 end
-                }) //for loop end
-                // })//csv layer qf.then end
-            }) // csvlayer qf end
-            map1.add(test)
-            console.log(test)
-          }) //boundary qf end
-        // }) //load func end
+          geomservice.convexHull(geom).then(function(result1){
+            var simpleFillSymbol = {
+          type: "simple-fill",
+          color: [227, 139, 79, 0.1],  // orange, opacity 10%
+          outline: {
+            color: [145, 29, 0],
+            width: 1
+          }
+        };
 
+        var polygonGraphic = new Graphic({
+          geometry: result1,
+          symbol: simpleFillSymbol,
+          popupTemplate: {
+            content: att
+          },
+
+        });
+        graphicsLayer.add(polygonGraphic);
+        
+        var row = table.insertRow(0);
+        row.setAttribute("id",i)
+        var cell1 = row.insertCell(0)
+        cell1.innerHTML=att
+        row.addEventListener("mouseover", mouseover);
+        if (outage_num.length==1){
+              view.extent=polygonGraphic.geometry.extent
+              view.zoom= view.zoom - 1
+            }
+          })
         })
+          }
+        })
+      })
 
+      function mouseover(evt){
+                // console.log(evt.toElement.innerText)
+                view.whenLayerView(graphicsLayer).then(function(layerView) {
+                    let results = graphicsLayer.graphics.items.map(function(item){
+                        return item
+                    })
+                    for(z of results){
+                        if (evt.toElement.innerText==z.popupTemplate.content){
+                            highlight && highlight.remove();
+                            highlight = layerView.highlight(z);
+                        }
+                    } 
+                })
+      }
+
+      function mouseout(evt){
+        view.whenLayerView(graphicsLayer).then(function(layerView) {
+            if (highlight!=null){
+                highlight.remove();
+            }
+        })
+    }
+})
     </script>
   </head>
 
   <body>
-    <div id="viewDiv"></div>
+    <div id="viewDiv" class="esri-widget">
+    <div id="infodiv" class="feature-listcontrol">
+        <label for="myTable">Feeder List</label>
+        <table id="myTable">
+          </table>
+    </div>
+    </div>
   </body>
 </html>
